@@ -34,7 +34,6 @@ void quickSort(int arr[], int l, int r)
         return insertionSort(arr, l, r);
 
     int i = l + rand()%(r-l);
-    printf("%d\n",i);
     swap(arr + i, arr + l);
     int j = partition(arr, l, r, i);
     quickSort(arr, l, j);
@@ -70,7 +69,7 @@ int compare(const void* a, const void* b)
 int main()
 {
     setlocale(LC_ALL, "Russian");
-    int n = 30;
+    int n = 1e6+ rand()%(int)(1e6);
     int *a = (int*)malloc(n * sizeof(int));
     int *b = (int*)malloc(n * sizeof(int));
     if (a && b)
