@@ -31,10 +31,11 @@ size_t partition(char* arr, size_t s, size_t n, int (*compFunc)(void const*, voi
     return i - 1;
 }
 
-unsigned long long quickSort(char *arr, size_t n, size_t sizeOfElem, int (*compFunc)(void const*, void const*), enum PivotType pivotType)
+unsigned long long quickSort(void *a, size_t n, size_t sizeOfElem, int (*compFunc)(void const*, void const*), enum PivotType pivotType)
 {
     if (n<=1)
-        return;
+        return 0;
+    char* arr = (char*)a;
     size_t i;
     unsigned long long comps = 0;
     switch (pivotType)
@@ -51,10 +52,10 @@ unsigned long long quickSort(char *arr, size_t n, size_t sizeOfElem, int (*compF
     case MED_FROM_3:
         if ((compFunc(arr, arr + sizeOfElem * n / 2) > 0) != (compFunc(arr, arr + sizeOfElem * (n - 1)) > 0)) {
             i = 0;
-            comps = 3;
+            comps = 2;
         }
         else {
-            comps = 6;
+            comps = 4;
             if ((compFunc(arr + sizeOfElem * n / 2, arr) > 0) != (compFunc(arr + sizeOfElem * n / 2, arr + sizeOfElem * (n - 1)) > 0))
                 i = n / 2;
             else
@@ -62,6 +63,7 @@ unsigned long long quickSort(char *arr, size_t n, size_t sizeOfElem, int (*compF
         }
         break;
     default:
+        exit(2);
         break;
     } 
     swap(arr + i * sizeOfElem, arr, sizeOfElem);
