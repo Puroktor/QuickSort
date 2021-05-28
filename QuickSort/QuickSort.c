@@ -6,59 +6,70 @@ enum PivotType {
     FIRST, LAST, RANDOM, MED_FROM_3
 };
 
-void swap(int *a, int *b)
-{
-    int tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
-//[l, r)
-int quickSort(int arr[], int l, int r, enum PivotType pivotType)
-{
-    if (l >= r-1)
-        return;
+enum ArraytType {
+    SORTED, REVERSED , RND
+};
 
-    int i, comps=0, m = l + (r-l)/2;
+void swap(char *a, char *b, size_t size)
+{   
+    char *tmp =(char*)malloc(size);
+    memcpy(tmp, a, size);
+    memcpy(a, b, size);
+    memcpy(b, tmp, size);
+    
+    free(tmp);
+}
+
+size_t partition(char* arr, size_t s, size_t n, int (*compFunc)(void const*, void const*))
+{
+    size_t i = 0;
+    for (size_t j = 0; j < n; j++) {
+        if ((*compFunc)(arr + j * s, arr) <= 0)
+            swap(arr + s * i++, arr + j * s, s);
+    }
+    swap(arr, arr + (i - 1) * s, s);
+    return i - 1;
+}
+
+unsigned long long quickSort(char *arr, size_t n, size_t sizeOfElem, int (*compFunc)(void const*, void const*), enum PivotType pivotType)
+{
+    if (n<=1)
+        return;
+    size_t i;
+    unsigned long long comps = 0;
     switch (pivotType)
     {
     case FIRST:
-        i = l;
+        i = 0;
         break;
     case LAST:
-        i = r - 1;
+        i = n - 1;
+        break;
     case RANDOM:
-        i= l + rand() % (r - l);
+        i= rand() %n;
         break;
     case MED_FROM_3:
-        i = (arr[l] > arr[m]) ? ((arr[r-1] < arr[m]) ? m : ((arr[r-1] < arr[l]) ? r-1 : l)) 
-            : ((arr[l] > arr[r-1]) ? l : (arr[m] > arr[r-1]) ? r-1 : m);
-        comps = 3; 
-        /*
-            беру кол-во сравнений по максимуму, все равно +-1 дела координально не изменит,
-            а в if рассписывать как-то не хочется) 
-        */ 
+        if ((compFunc(arr, arr + sizeOfElem * n / 2) > 0) != (compFunc(arr, arr + sizeOfElem * (n - 1)) > 0)) {
+            i = 0;
+            comps = 3;
+        }
+        else {
+            comps = 6;
+            if ((compFunc(arr + sizeOfElem * n / 2, arr) > 0) != (compFunc(arr + sizeOfElem * n / 2, arr + sizeOfElem * (n - 1)) > 0))
+                i = n / 2;
+            else
+                i = n - 1;
+        }
         break;
     default:
         break;
     } 
-    swap(arr + i, arr + l);
-    int j = partition(arr, l, r, i);
-    comps += r - l;
-    comps+=quickSort(arr, l, j, pivotType);
-    comps+=quickSort(arr, j+1, r, pivotType);
+    swap(arr + i * sizeOfElem, arr, sizeOfElem);
+    size_t j = partition(arr, sizeOfElem, n, compFunc);
+    comps += n;
+    comps+=quickSort(arr, j, sizeOfElem, compFunc, pivotType);
+    comps+=quickSort(arr+(j+1) * sizeOfElem, n-j-1, sizeOfElem, compFunc, pivotType);
     return comps;
-}
-
-int partition(int arr[], int l, int r)
-{
-    int p = arr[l];
-    int i = l;
-    for (int j = l; j < r; j++) {
-        if (arr[j] <= p)
-            swap(arr + i++, arr + j);
-    }
-    swap(arr + l, arr + i - 1);
-    return i - 1;
 }
 
 int checkIsCorrect(int first[], int second[], int n)
@@ -93,22 +104,35 @@ void createRandomArr(int *arr, int n)
         arr[i] = rand();
 }
 
-void test(int *a, int *b,enum pivotType pivot, int n) {
-    int comp = 0;
-    printf("Массив из %d элементов:\n", n);
+void test(int *a, int *b, int n, enum pivotType pivot, enum arrayType arrType)
+{
+    unsigned long long comp = 0;
     for (int i = 0; i < 10; i++)
     {
-        createRandomArr(a, n);
+        switch (arrType)
+        {
+        case SORTED:
+            createSortedArr(a,n);
+            break;
+        case REVERSED:
+            createReverseSortedArr(a,n);
+            break;
+        case RND:
+            createRandomArr(a, n);
+            break;
+        default:
+            break;
+        }
         memcpy(b, a, n * sizeof(int));
-        comp += quickSort(a, 0, n, pivot);
+        comp += quickSort(a, n, sizeof(int),compare, pivot);
         qsort(b, n, sizeof(int), compare);
         if (!checkIsCorrect(a, b, n))
         {
-            printf("Массив отсортирован неверно\n");
+            printf("\tМассив отсортирован неверно\n");
             return;
         }
     }
-    printf("Массив отсортирован верно 10 раз, в среднем %d сравнений\n", comp/10);
+    printf("\tМассив отсортирован верно 10 раз, в среднем %llu сравнений\n", comp/10);
 }
 
 int main()
@@ -120,19 +144,23 @@ int main()
     if (!a || !b)
         exit(1);
     srand(time(NULL));
-   
-    printf("*----Опорный элемент - первый:\n");
-    test(a, b, FIRST, n1);
-    test(a, b, FIRST, n2);
-    printf("*----Опорный элемент - последний:\n");
-    test(a, b, LAST, n1);
-    test(a, b, LAST, n2);
-    printf("*----Опорный элемент - случайный:\n");
-    test(a, b, RANDOM, n1);
-    test(a, b, RANDOM, n2);
-    printf("*----Опорный элемент - медиана из 3-х:\n");
-    test(a, b, MED_FROM_3, n1);
-    test(a, b, MED_FROM_3, n2);
+    char outs[4][40] = { "*----Опорный элемент - первый:\n" , "*----Опорный элемент - последний:\n",
+    "*----Опорный элемент - случайный:\n", "*----Опорный элемент - медиана из 3-х:\n"};
+    char arrs[3][40] = { "\t~~~Отсортированный масив:\n" , "\t~~~Отсортированный обратно массив:\n",
+    "\t~~~Случайный массив:\n", };
+    for (int i = 0; i < 4; i++)
+    {
+        printf(outs[i]);
+        printf("Массив из %d элементов:\n", n1);
+        printf(arrs[2]);
+        test(a, b, n1, i, RND);
+        printf("Массив из %d элементов:\n", n2);
+        for (int j = 0; j < 3; j++) {
+            printf(arrs[j]);
+            test(a, b, n2, i, j);
+        }
+        
+    }
     free(a);
     free(b);
 }
