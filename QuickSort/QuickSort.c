@@ -10,9 +10,9 @@ enum ArraytType {
     SORTED, REVERSED , RND
 };
 
-void swap(char *a, char *b, size_t size)
+void swap(void *a, char *b, size_t size)
 {   
-    char *tmp =(char*)malloc(size);
+    void *tmp = malloc(size);
     memcpy(tmp, a, size);
     memcpy(a, b, size);
     memcpy(b, tmp, size);
@@ -165,4 +165,5 @@ int main()
     }
     free(a);
     free(b);
+    return 0;
 }
